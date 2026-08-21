@@ -48,11 +48,18 @@
   #menu-panel .menu-item-detail{font-size:.8rem;color:#999;padding-bottom:8px;}
 
   /* ---------- HERO ---------- */
-  .hero{position:relative;min-height:500px;display:flex;align-items:flex-end;
-    background:linear-gradient(180deg,rgba(17,17,17,.35),rgba(17,17,17,.88)),
-    linear-gradient(135deg,#3a3a3a,#111);
+  .hero{position:relative;min-height:500px;display:flex;align-items:flex-end;overflow:hidden;
+    background:linear-gradient(135deg,#3a3a3a,#111);
     color:#fff;}
-  .hero-inner{padding:56px 20px 40px;max-width:var(--maxw);margin:0 auto;width:100%;}
+  .hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.5s ease-in-out;z-index:0;}
+  .hero-slide.active{opacity:1;}
+  .hero::after{
+    content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(180deg,rgba(17,17,17,.35),rgba(17,17,17,.88)),
+      radial-gradient(circle at 10% 10%, rgba(179,20,27,.35), transparent 45%),
+      radial-gradient(circle at 90% 90%, rgba(30,107,60,.4), transparent 50%);
+  }
+  .hero-inner{position:relative;z-index:2;padding:56px 20px 40px;max-width:var(--maxw);margin:0 auto;width:100%;}
   .eyebrow{font-size:.82rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--brass-light);font-weight:700;margin-bottom:12px;}
   .hero h1{font-size:2.3rem;line-height:1.15;margin-bottom:14px;}
   .hero h1 em{color:var(--brass-light);font-style:normal;}
@@ -226,6 +233,7 @@
 </div>
 
 <section class="hero">
+  <div id="hero-slides"></div>
   <div class="hero-inner">
     <div class="eyebrow">Mons · Boussu · Saint-Ghislain · Borinage</div>
     <h1>Taxi Borinage — Votre <em>navette aéroport</em> et chauffeur privé sur Mons</h1>
@@ -268,6 +276,7 @@
       <div class="service-card" onclick="openService('evenements')"><div class="plus">+</div><div class="ic">🥂</div><h3>Événements privés</h3><p>Mariages, fêtes, séminaires haut de gamme.</p></div>
       <div class="service-card" onclick="openService('gares')"><div class="plus">+</div><div class="ic">🚉</div><h3>Transferts gares</h3><p>Mons, Bruxelles, Lille, Paris, Luxembourg.</p></div>
       <div class="service-card" onclick="openService('groupes')"><div class="plus">+</div><div class="ic">👨‍👩‍👧</div><h3>Groupes &amp; familles</h3><p>Véhicules spacieux jusqu'à 7 places.</p></div>
+      <div class="service-card" onclick="openService('voyages')"><div class="plus">+</div><div class="ic">🚌</div><h3>Voyages organisés &amp; groupes</h3><p>Sorties pour seniors, maisons de repos et groupes : mer, parcs, visites de ville.</p></div>
     </div>
   </div>
 </section>
@@ -372,10 +381,10 @@
       <div class="contact-grid">
         <input type="text" id="r-nom" placeholder="Nom et prénom" required>
         <input type="tel" id="r-tel" placeholder="Téléphone" required>
-        <input type="text" id="r-depart" placeholder="Adresse de départ">
-        <input type="text" id="r-dest" placeholder="Destination">
-        <input type="date" id="r-date" placeholder="Date">
-        <input type="number" id="r-pax" placeholder="Nombre de passagers">
+        <input type="text" id="r-depart" placeholder="Adresse de départ" required>
+        <input type="text" id="r-dest" placeholder="Destination" required>
+        <input type="date" id="r-date" placeholder="Date" required>
+        <input type="number" id="r-pax" placeholder="Nombre de passagers" min="1" value="1" required>
         <textarea id="r-msg" placeholder="Message (optionnel)"></textarea>
       </div>
       <button type="submit" class="submit-btn">Envoyer la demande</button>
@@ -449,6 +458,7 @@ var SERVICES = {
   evenements:{icon:'🥂',title:'Événements privés',desc:'Mariages, fêtes, séminaires : profitez de véhicules haut de gamme (BMW, Mercedes) et d\'un chauffeur discret pour vos occasions particulières. Ponctualité et élégance garanties pour le plus beau jour, ou tout autre événement important.'},
   gares:{icon:'🚉',title:'Transferts gares',desc:'Connexions assurées vers les gares de Mons, Bruxelles, Lille, Paris et Luxembourg. Prise en charge à domicile ou au bureau, avec suivi des horaires pour ne jamais manquer votre train.'},
   groupes:{icon:'👨‍👩‍👧',title:'Groupes & familles',desc:'Véhicules spacieux jusqu\'à 7 places (Renault Trafic) pour vos déplacements en famille ou entre amis, avec de la place pour tous les bagages. Idéal pour les trajets aéroport ou les sorties de groupe.'},
+  voyages:{icon:'🚌',title:'Voyages organisés & groupes',desc:'Sorties organisées pour maisons de repos, seniors et personnes à mobilité réduite : journée à la mer, parc animalier, visite de ville. Véhicule adapté selon le nombre de participants, forfait groupe ou tarif par personne, partout en Belgique.'},
   h24:{icon:'🕐',title:'24h/24 — 7j/7',desc:'Un service disponible à tout moment, jour et nuit, y compris tôt le matin ou tard le soir. Que ce soit pour un vol matinal ou un retour de soirée, nous sommes toujours joignables pour organiser votre trajet.'},
   chauffeurs:{icon:'🤵',title:'Chauffeurs professionnels',desc:'Nos chauffeurs sont courtois, ponctuels et parfaitement compétents. Sélectionnés pour leur sérieux et leur connaissance de la région du Borinage, ils garantissent un trajet agréable et sécurisé à chaque course.'},
   reservation:{icon:'📱',title:'Réservation pratique',desc:'Réservez comme vous le souhaitez : en ligne via le formulaire, par téléphone ou directement sur WhatsApp pour une réponse rapide. Simple, rapide, sans complication.'},
@@ -490,11 +500,6 @@ document.getElementById('reservation-form').addEventListener('submit', function(
   var pax = document.getElementById('r-pax').value;
   var msg = document.getElementById('r-msg').value;
 
-  if(!nom || !tel){
-    alert('Merci de renseigner au minimum votre nom et votre téléphone.');
-    return;
-  }
-
   var texte = 'Bonjour Taxi Borinage, je souhaite réserver une course.%0A' +
     'Nom : ' + nom + '%0A' +
     'Téléphone : ' + tel +
@@ -506,6 +511,30 @@ document.getElementById('reservation-form').addEventListener('submit', function(
 
   window.location.href = 'https://wa.me/32472831246?text=' + encodeURIComponent(texte.replace(/%0A/g,'\n'));
 });
+
+// ---------- DIAPORAMA HERO (même logique que taxiwal.com) ----------
+var heroPhotos = [
+  "bmw-serie5.jpg",
+  "mercedes-classe-e.jpg",
+  "renault-trafic.jpg",
+  "toyota-corolla.jpg"
+];
+var heroContainer = document.getElementById("hero-slides");
+if(heroContainer){
+  heroPhotos.forEach(function(src, i){
+    var div = document.createElement("div");
+    div.className = "hero-slide" + (i === 0 ? " active" : "");
+    div.style.backgroundImage = "url('" + src + "')";
+    heroContainer.appendChild(div);
+  });
+  var slides = heroContainer.querySelectorAll(".hero-slide");
+  var heroIndex = 0;
+  setInterval(function(){
+    slides[heroIndex].classList.remove("active");
+    heroIndex = (heroIndex + 1) % slides.length;
+    slides[heroIndex].classList.add("active");
+  }, 2800);
+}
 </script>
 
 </body>
