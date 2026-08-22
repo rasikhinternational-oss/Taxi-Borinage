@@ -181,6 +181,7 @@
   .float-btn.phone{background:var(--brass);}
   .float-btn.wa{background:var(--green);}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -382,13 +383,16 @@
       <div class="contact-grid">
         <input type="text" id="r-nom" placeholder="Nom et prénom" required>
         <input type="tel" id="r-tel" placeholder="Téléphone" required>
+        <input type="email" id="r-email" placeholder="Adresse email" required>
         <input type="text" id="r-depart" placeholder="Adresse de départ" required>
         <input type="text" id="r-dest" placeholder="Destination" required>
         <input type="date" id="r-date" placeholder="Date" required>
+        <input type="time" id="r-heure" placeholder="Heure" required>
         <input type="number" id="r-pax" placeholder="Nombre de passagers" min="1" value="1" required>
         <textarea id="r-msg" placeholder="Message (optionnel)"></textarea>
       </div>
       <button type="submit" class="submit-btn">Envoyer la demande</button>
+      <div id="booking-status" style="display:none;margin-top:14px;padding:12px 14px;border-radius:8px;font-size:.9rem;"></div>
     </form>
   </div>
 </section>
@@ -494,24 +498,54 @@ function calcEstimate(){
 
 document.getElementById('reservation-form').addEventListener('submit', function(e){
   e.preventDefault();
+  var bookingStatus = document.getElementById('booking-status');
+  var btn = document.querySelector('#reservation-form button[type=submit]');
+  btn.disabled = true;
+  bookingStatus.style.display = 'none';
+
   var nom = document.getElementById('r-nom').value;
   var tel = document.getElementById('r-tel').value;
+  var email = document.getElementById('r-email').value;
   var depart = document.getElementById('r-depart').value;
   var dest = document.getElementById('r-dest').value;
   var date = document.getElementById('r-date').value;
+  var heure = document.getElementById('r-heure').value;
   var pax = document.getElementById('r-pax').value;
   var msg = document.getElementById('r-msg').value;
 
-  var texte = 'Bonjour Taxi Borinage, je souhaite réserver une course.%0A' +
-    'Nom : ' + nom + '%0A' +
-    'Téléphone : ' + tel +
-    (depart ? '%0ADépart : ' + depart : '') +
-    (dest ? '%0ADestination : ' + dest : '') +
-    (date ? '%0ADate : ' + date : '') +
-    (pax ? '%0APassagers : ' + pax : '') +
-    (msg ? '%0AMessage : ' + msg : '');
+  var EMAILJS_SERVICE_ID = "service_i9j07f9";
+  var EMAILJS_TEMPLATE_ID = "template_rwz9fh7";
+  var EMAILJS_PUBLIC_KEY = "4M5btJLpy3Lo8I1t5";
+  var CONTACT_EMAIL = "contact@taxiborinage.be";
+  var WHATSAPP_NUMERO = "32472831246";
 
-  window.location.href = 'https://wa.me/32472831246?text=' + encodeURIComponent(texte.replace(/%0A/g,'\n'));
+  var params = {
+    name: nom,
+    phone: tel,
+    email: email,
+    reply_to: email,
+    depart: depart,
+    arrivee: dest,
+    date: date,
+    message: 'Heure : ' + heure + (pax ? '. Passagers : ' + pax : '') + '. ' + msg + ' (via taxiborinage.com)'
+  };
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params, EMAILJS_PUBLIC_KEY)
+    .then(function(){
+      btn.disabled = false;
+      bookingStatus.style.display = 'block';
+      bookingStatus.style.background = 'rgba(30,107,60,.15)';
+      bookingStatus.style.color = '#1E6B3C';
+      bookingStatus.textContent = '✅ Merci ! Votre demande a bien été envoyée, nous vous répondons rapidement.';
+      document.getElementById('reservation-form').reset();
+    })
+    .catch(function(){
+      btn.disabled = false;
+      bookingStatus.style.display = 'block';
+      bookingStatus.style.background = 'rgba(179,20,27,.15)';
+      bookingStatus.style.color = 'var(--brass)';
+      bookingStatus.innerHTML = '⚠️ L\'envoi a échoué. Contactez-nous directement par <a href="mailto:' + CONTACT_EMAIL + '" style="text-decoration:underline;">email</a> ou <a href="https://wa.me/' + WHATSAPP_NUMERO + '" target="_blank" rel="noopener" style="text-decoration:underline;">WhatsApp</a>.';
+    });
 });
 
 // ---------- DIAPORAMA HERO (même logique que taxiwal.com) ----------
